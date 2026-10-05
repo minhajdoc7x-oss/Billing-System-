@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Best Bakery - Online Order</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f7f3ee;
+    color:#333;
+}
+
+header{
+    background:#6d3b1f;
+    color:white;
+    text-align:center;
+    padding:18px;
+}
+
+.container{
+    max-width:1100px;
+    margin:auto;
+    padding:15px;
+}
+
+.card{
+    background:white;
+    padding:15px;
+    margin-bottom:15px;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:10px;
+}
+
+.item{
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:12px;
+    background:#fff;
+}
+
+.item button{
+    width:100%;
+    border:0;
+    background:#6d3b1f;
+    color:white;
+    padding:10px;
+    border-radius:7px;
+    cursor:pointer;
+}
+
+.item button:active{
+    transform:scale(.97);
+}
+
+.price{
+    color:#a44c20;
+    font-weight:bold;
+    margin:7px 0;
+}
+
+.cart-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 0;
+    border-bottom:1px solid #eee;
+}
+
+.qty button{
+    width:32px;
+    height:32px;
+    border:0;
+    border-radius:5px;
+    background:#ddd;
+    cursor:pointer;
+    font-size:18px;
+}
+
+.total{
+    font-size:22px;
+    font-weight:bold;
+    color:#6d3b1f;
+}
+
+.primary{
+    background:#198754;
+    color:white;
+    border:0;
+    padding:13px 20px;
+    border-radius:8px;
+    font-weight:bold;
+    cursor:pointer;
+    width:100%;
+}
+
+.empty{
+    text-align:center;
+    color:#777;
+    padding:20px;
+}
+
+.table-box{
+    background:#fff3df;
+    padding:12px;
+    border-radius:8px;
+    margin-bottom:15px;
+    text-align:center;
+    font-weight:bold;
+}
+
+@media(max-width:500px){
+    .grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .item{
+        padding:10px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🍰 Best Bakery</h1>
+    <p>Online Ordering</p>
+</header>
+
+<div class="container">
+
+    <div class="table-box">
+        🪑 Table <span id="tableNumber">1</span>
+    </div>
+
+    <div id="menuArea"></div>
+
+    <div class="card">
+
+        <h2>🛒 Your Order</h2>
+
+        <div id="cartArea">
+            <div class="empty">
+                Cart is empty
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="total">
+            Total: ₹<span id="cartTotal">0</span>
+        </div>
+
+        <br>
+
+        <button class="primary" onclick="placeOrder()">
+            Place Order
+        </button>
+
+    </div>
+
+    <div class="card">
+
+        <h2>📋 Order Status</h2>
+
+        <div id="orderStatus">
+            No active order.
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================
+   TABLE NUMBER
+========================= */
+
+const params = new URLSearchParams(window.location.search);
+
+let table = params.get("table") || "1";
+
+if(!["1","2","3","4"].includes(table)){
+    table = "1";
+}
+
+document.getElementById("tableNumber").textContent = table;
+
+
+/* =========================
+   MENU
+========================= */
+
+const menu = {
+
+    "Fresh Juice":[
+        ["Orange",70],
+        ["Musambi",70],
+        ["Grapes",70],
+        ["Pineapple",70],
+        ["Milk Lime",50],
+        ["Pineapple Lime",50]
+    ],
+
+    "Milk Shakes":[
+        ["Chikku",70],
+        ["Sharjah",80],
+        ["Mango",90],
+        ["Strawberry",90],
+        ["Avocado",100],
+        ["Shamam",100],
+        ["Tender",100],
+        ["Sitaphal",100],
+        ["Apple",100]
+    ],
+
+    "Special Shakes":[
+        ["Badam Milk",80],
+        ["Cold Coffee",80],
+        ["Snickers",120],
+        ["KitKat",120],
+        ["Oreo",80]
+    ],
+
+    "Dry Fruit Shakes":[
+        ["Dates",90],
+        ["Badam",120],
+        ["Roasted Cashew",120],
+        ["Mixed Dry Fruits",130]
+    ],
+
+    "Ice Cream Shakes":[
+        ["Vanilla Shake",90],
+        ["Strawberry Shake",90],
+        ["Pista Shake",90],
+        ["Mango Shake",90],
+        ["Chocolate Shake",90],
+        ["Butterscotch Shake",90],
+        ["Spanish Delight Shake",100]
+    ],
+
+    "Scoops":[
+        ["Vanilla",50],
+        ["Strawberry",60],
+        ["Pista",60],
+        ["Mango",60],
+        ["Chocolate",60],
+        ["Butterscotch",60],
+        ["Spanish Delight",60]
+    ],
+
+    "Icecream Specials":[
+        ["Fruit Salad",70],
+        ["Gudbud",130],
+        ["Dilkhush",160],
+        ["Fancy Falooda",160],
+        ["Royal Falooda",180],
+        ["Tender Falooda",200],
+        ["Choco Buzz",180],
+        ["Best Gudbud",200],
+        ["Brownie Fudge",200]
+    ],
+
+    "Hot Beverages":[
+        ["Tea",15],
+        ["Coffee",25],
+        ["Horlicks",30],
+        ["Boost",30]
+    ],
+
+    "Snacks":[
+        ["Chicken Puffs",20],
+        ["Egg Puffs",20],
+        ["Cutlet",20],
+        ["Rolls",25],
+        ["Buns",20],
+        ["Unniyappam",12],
+        ["Samosa Veg",12],
+        ["Samosa Chicken",15],
+        ["Ullivada",15],
+        ["Burger",25],
+        ["Cream Bun",20],
+        ["Butter Bun",20],
+        ["Sandwich",25]
+    ]
+
+};
+
+
+/* =========================
+   CART
+========================= */
+
+let cart = {};
+
+
+/* =========================
+   SHOW MENU
+========================= */
+
+function renderMenu(){
+
+    const menuArea =
+        document.getElementById("menuArea");
+
+    menuArea.innerHTML = "";
+
+    Object.keys(menu).forEach(category => {
+
+        const card =
+            document.createElement("div");
+
+        card.className = "card";
+
+        const title =
+            document.createElement("h2");
+
+        title.textContent = category;
+
+        card.appendChild(title);
+
+        const grid =
+            document.createElement("div");
+
+        grid.className = "grid";
+
+        menu[category].forEach(item => {
+
+            const name = item[0];
+            const price = item[1];
+
+            const div =
+                document.createElement("div");
+
+            div.className = "item";
+
+            const itemName =
+                document.createElement("b");
+
+            itemName.textContent = name;
+
+            const priceText =
+                document.createElement("div");
+
+            priceText.className = "price";
+
+            priceText.textContent = "₹" + price;
+
+            const button =
+                document.createElement("button");
+
+            button.textContent = "Add";
+
+            button.addEventListener(
+                "click",
+                function(){
+                    addToCart(name,price);
+                }
+            );
+
+            div.appendChild(itemName);
+            div.appendChild(priceText);
+            div.appendChild(button);
+
+            grid.appendChild(div);
+
+        });
+
+        card.appendChild(grid);
+
+        menuArea.appendChild(card);
+
+    });
+
+}
+
+
+/* =========================
+   ADD TO CART
+========================= */
+
+function addToCart(name,price){
+
+    if(!cart[name]){
+
+        cart[name] = {
+            name:name,
+            price:price,
+            qty:0
+        };
+
+    }
+
+    cart[name].qty++;
+
+    renderCart();
+}
+
+
+/* =========================
+   CHANGE QUANTITY
+========================= */
+
+function changeQty(name,value){
+
+    if(!cart[name]){
+        return;
+    }
+
+    cart[name].qty += value;
+
+    if(cart[name].qty <= 0){
+        delete cart[name];
+    }
+
+    renderCart();
+}
+
+
+/* =========================
+   CART DISPLAY
+========================= */
+
+function renderCart(){
+
+    const cartArea =
+        document.getElementById("cartArea");
+
+    const cartTotal =
+        document.getElementById("cartTotal");
+
+    const items =
+        Object.values(cart);
+
+    if(items.length === 0){
+
+        cartArea.innerHTML = `
+            <div class="empty">
+                Cart is empty
+            </div>
+        `;
+
+        cartTotal.textContent = "0";
+
+        return;
+    }
+
+    cartArea.innerHTML = "";
+
+    let total = 0;
+
+    items.forEach(item => {
+
+        const amount =
+            item.price * item.qty;
+
+        total += amount;
+
+        const row =
+            document.createElement("div");
+
+        row.className = "cart-row";
+
+        const name =
+            document.createElement("div");
+
+        name.innerHTML =
+            `<b>${item.name}</b><br>
+             ₹${item.price} × ${item.qty}`;
+
+        const controls =
+            document.createElement("div");
+
+        controls.className = "qty";
+
+        const minus =
+            document.createElement("button");
+
+        minus.textContent = "−";
+
+        minus.onclick = function(){
+            changeQty(item.name,-1);
+        };
+
+        const qty =
+            document.createElement("span");
+
+        qty.textContent = " " + item.qty + " ";
+
+        const plus =
+            document.createElement("button");
+
+        plus.textContent = "+";
+
+        plus.onclick = function(){
+            changeQty(item.name,1);
+        };
+
+        controls.appendChild(minus);
+        controls.appendChild(qty);
+        controls.appendChild(plus);
+
+        const amountText =
+            document.createElement("b");
+
+        amountText.textContent =
+            "₹" + amount;
+
+        row.appendChild(name);
+        row.appendChild(controls);
+        row.appendChild(amountText);
+
+        cartArea.appendChild(row);
+
+    });
+
+    cartTotal.textContent = total;
+
+}
+
+
+/* =========================
+   PLACE ORDER
+========================= */
+
+function placeOrder(){
+
+    const items =
+        Object.values(cart);
+
+    if(items.length === 0){
+
+        alert("Please select items first.");
+
+        return;
+    }
+
+    let total = 0;
+
+    items.forEach(item => {
+
+        total +=
+            item.price * item.qty;
+
+    });
+
+    const order = {
+
+        orderNumber:
+            "BK" +
+            Date.now().toString().slice(-6),
+
+        table:table,
+
+        items:items,
+
+        total:total,
+
+        status:"Order Received",
+
+        time:new Date().toLocaleString()
+
+    };
+
+
+    /*
+       TEMPORARY STORAGE
+
+       Firebase will be connected later.
+    */
+
+    localStorage.setItem(
+        "bakeryCurrentOrder",
+        JSON.stringify(order)
+    );
+
+    document.getElementById("orderStatus")
+        .innerHTML = `
+
+            <p>
+                <b>Order No:</b>
+                ${order.orderNumber}
+            </p>
+
+            <p>
+                <b>Table:</b>
+                ${order.table}
+            </p>
+
+            <p>
+                <b>Total:</b>
+                ₹${order.total}
+            </p>
+
+            <p>
+                <b>Status:</b>
+                🟡 ${order.status}
+            </p>
+
+            <p>
+                Thank you! Your order has been received.
+            </p>
+
+        `;
+
+
+    cart = {};
+
+    renderCart();
+
+    alert(
+        "✅ Order placed successfully!\n" +
+        "Order No: " +
+        order.orderNumber
+    );
+
+}
+
+
+/* =========================
+   LOAD PREVIOUS ORDER
+========================= */
+
+function loadPreviousOrder(){
+
+    const saved =
+        localStorage.getItem(
+            "bakeryCurrentOrder"
+        );
+
+    if(!saved){
+        return;
+    }
+
+    try{
+
+        const order =
+            JSON.parse(saved);
+
+        document.getElementById("orderStatus")
+            .innerHTML = `
+
+                <p>
+                    <b>Order No:</b>
+                    ${order.orderNumber}
+                </p>
+
+                <p>
+                    <b>Table:</b>
+                    ${order.table}
+                </p>
+
+                <p>
+                    <b>Total:</b>
+                    ₹${order.total}
+                </p>
+
+                <p>
+                    <b>Status:</b>
+                    🟡 ${order.status}
+                </p>
+
+            `;
+
+    }catch(error){
+
+        console.log(error);
+
+    }
+
+}
+
+
+/* =========================
+   START
+========================= */
+
+renderMenu();
+
+renderCart();
+
+loadPreviousOrder();
+
+</script>
+
+</body>
+</html>
